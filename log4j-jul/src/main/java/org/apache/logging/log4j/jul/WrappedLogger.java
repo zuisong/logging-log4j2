@@ -17,7 +17,9 @@
 package org.apache.logging.log4j.jul;
 
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.message.EntryMessage;
+import org.apache.logging.log4j.message.Message;
 import org.apache.logging.log4j.spi.ExtendedLogger;
 import org.apache.logging.log4j.spi.ExtendedLoggerWrapper;
 
@@ -63,5 +65,11 @@ class WrappedLogger extends ExtendedLoggerWrapper {
     @Override
     public <T extends Throwable> T throwing(final T t) {
         return throwing(FQCN, LevelTranslator.toLevel(java.util.logging.Level.FINER), t);
+    }
+
+    @Override
+    protected void log(
+            Level level, Marker marker, String fqcn, StackTraceElement location, Message message, Throwable throwable) {
+        logger.logMessage(level, marker, fqcn, location, message, throwable);
     }
 }

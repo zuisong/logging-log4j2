@@ -19,6 +19,7 @@ package org.apache.logging.log4j.jul.test;
 import static org.junit.Assert.assertEquals;
 
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.logging.log4j.core.test.appender.ListAppender;
 import org.apache.logging.log4j.core.test.junit.LoggerContextRule;
@@ -30,11 +31,13 @@ import org.junit.Test;
 
 public class CallerInformationTest {
 
-    // config from log4j-core test-jar
-    private static final String CONFIG = "log4j2-calling-class.xml";
+    private static final String PARAM_1 = "PARAM_1";
+    private static final String[] PARAMS = {PARAM_1, "PARAM_2"};
+    private static final String SOURCE_CLASS = "SourceClass";
+    private static final String SOURCE_METHOD = "sourceMethod";
 
     @Rule
-    public final LoggerContextRule ctx = new LoggerContextRule(CONFIG);
+    public final LoggerContextRule ctx = new LoggerContextRule("CallerInformationTest.xml");
 
     @BeforeClass
     public static void setUpClass() {
@@ -53,10 +56,24 @@ public class CallerInformationTest {
         logger.info("Ignored message contents.");
         logger.warning("Verifying the caller class is still correct.");
         logger.severe("Hopefully nobody breaks me!");
-        final List<String> messages = app.getMessages();
+        List<String> messages = app.getMessages();
         assertEquals("Incorrect number of messages.", 3, messages.size());
         for (final String message : messages) {
             assertEquals("Incorrect caller class name.", this.getClass().getName(), message);
+        }
+
+        // Test passing the location information directly
+        app.clear();
+        logger.logp(Level.INFO, SOURCE_CLASS, SOURCE_METHOD, "Hello!");
+        logger.logp(Level.INFO, SOURCE_CLASS, SOURCE_METHOD, "Hello {1}!", PARAM_1);
+        logger.logp(Level.INFO, SOURCE_CLASS, SOURCE_METHOD, "Hello {1} and {2}!", PARAMS);
+        logger.logp(Level.INFO, SOURCE_CLASS, SOURCE_METHOD, "Hello!", new RuntimeException());
+        logger.logp(Level.INFO, SOURCE_CLASS, SOURCE_METHOD, () -> "Hello" + PARAM_1 + "!");
+        logger.logp(Level.INFO, SOURCE_CLASS, SOURCE_METHOD, new RuntimeException(), () -> "Hello " + PARAM_1 + "!");
+        messages = app.getMessages();
+        assertEquals("Incorrect number of messages.", 6, messages.size());
+        for (final String message : messages) {
+            assertEquals("Incorrect caller class name.", SOURCE_CLASS, message);
         }
     }
 
@@ -69,10 +86,24 @@ public class CallerInformationTest {
         logger.severe("ZOMBIES!!!");
         logger.warning("brains~~~");
         logger.info("Itchy. Tasty.");
-        final List<String> messages = app.getMessages();
+        List<String> messages = app.getMessages();
         assertEquals("Incorrect number of messages.", 5, messages.size());
         for (final String message : messages) {
             assertEquals("Incorrect caller method name.", "testMethodLogger", message);
+        }
+
+        // Test passing the location information directly
+        app.clear();
+        logger.logp(Level.INFO, SOURCE_CLASS, SOURCE_METHOD, "Hello!");
+        logger.logp(Level.INFO, SOURCE_CLASS, SOURCE_METHOD, "Hello {1}!", PARAM_1);
+        logger.logp(Level.INFO, SOURCE_CLASS, SOURCE_METHOD, "Hello {1} and {2}!", PARAMS);
+        logger.logp(Level.INFO, SOURCE_CLASS, SOURCE_METHOD, "Hello!", new RuntimeException());
+        logger.logp(Level.INFO, SOURCE_CLASS, SOURCE_METHOD, () -> "Hello " + PARAM_1 + "!");
+        logger.logp(Level.INFO, SOURCE_CLASS, SOURCE_METHOD, new RuntimeException(), () -> "Hello " + PARAM_1 + "!");
+        messages = app.getMessages();
+        assertEquals("Incorrect number of messages.", 6, messages.size());
+        for (final String message : messages) {
+            assertEquals("Incorrect caller method name.", SOURCE_METHOD, message);
         }
     }
 }

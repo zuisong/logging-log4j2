@@ -22,9 +22,22 @@ import org.apache.logging.log4j.spi.LoggerContext;
 import org.apache.logging.log4j.util.StackLocatorUtil;
 
 /**
- * Abstract Logger registry. Due to the optionality of using log4j-core, there are two registries available at runtime
- * to create: {@link ApiLoggerAdapter} and {@link CoreLoggerAdapter}.
+ * Abstract Logger registry.
+ * <p>
+ *     JUL contains methods, such as {@link Logger#setLevel}, which modify the configuration of the logging backend.
+ *     To fully implement all {@code Logger} methods, we need to provide a different {@code Logger} implementation
+ *     for each Log4j API implementation.
+ * </p>
+ * <p>
+ *     Older Log4j versions provided an alternative {@code CoreLoggerAdapter} implementation that supported
+ *     the modification of Log4j Core configuration using JUL.
+ * </p>
+ *     Since version 2.24.0, however, this implementation was deprecated for removal.
+ *     If you wish to enable this feature again, you need to implement this class and provide its FQCN
+ *     as {@code log4j.jul.loggerAdapter} configuration property.
+ * </p>
  *
+ * @see <a href="https://github.com/apache/logging-log4j2/issues/2353">Issue #2353</a>
  * @since 2.1
  */
 public abstract class AbstractLoggerAdapter extends org.apache.logging.log4j.spi.AbstractLoggerAdapter<Logger> {

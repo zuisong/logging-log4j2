@@ -15,22 +15,17 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<Configuration name="CallerInformationTest" status="ERROR">
+<Configuration xmlns="https://logging.apache.org/xml/ns"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="
+                   https://logging.apache.org/xml/ns
+                   https://logging.apache.org/xml/ns/log4j-config-3.xsd">
   <Appenders>
-    <List name="Class">
-      <PatternLayout pattern="%class"/>
-    </List>
-    <List name="Method">
-      <PatternLayout pattern="%method"/>
-    </List>
+    <List name="LIST"/>
   </Appenders>
   <Loggers>
-    <Logger name="ClassLogger" level="info">
-      <AppenderRef ref="Class"/>
-    </Logger>
-    <Logger name="MethodLogger" level="info">
-      <AppenderRef ref="Method"/>
-    </Logger>
-    <Root level="off"/>
+    <Root level="INFO">
+      <AppenderRef ref="LIST"/>
+    </Root>
   </Loggers>
 </Configuration>

@@ -21,7 +21,6 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Logger;
-import org.apache.logging.log4j.LoggingException;
 import org.apache.logging.log4j.kit.env.PropertyEnvironment;
 import org.apache.logging.log4j.status.StatusLogger;
 import org.apache.logging.log4j.util.LoaderUtil;
@@ -41,9 +40,6 @@ import org.apache.logging.log4j.util.LoaderUtil;
 public class LogManager extends java.util.logging.LogManager {
 
     private static final org.apache.logging.log4j.Logger LOGGER = StatusLogger.getLogger();
-    private static final String CORE_LOGGER_CLASS_NAME = "org.apache.logging.log4j.core.Logger";
-    private static final String CORE_LOGGER_ADAPTER_CLASS_NAME = "org.apache.logging.log4j.jul.CoreLoggerAdapter";
-    private static final String API_LOGGER_ADAPTER_CLASS_NAME = "org.apache.logging.log4j.jul.ApiLoggerAdapter";
     private final AbstractLoggerAdapter loggerAdapter;
     // Contains the set of logger names that are actively being requested using getLogger.
     private final ThreadLocal<Set<String>> recursive = ThreadLocal.withInitial(HashSet::new);
@@ -62,21 +58,9 @@ public class LogManager extends java.util.logging.LogManager {
             }
         }
         if (adapter == null) {
-            // default adapter
-            String adapterClassName;
-            try {
-                // find out if log4j-core is available
-                LoaderUtil.loadClass(CORE_LOGGER_CLASS_NAME);
-                adapterClassName = CORE_LOGGER_ADAPTER_CLASS_NAME;
-            } catch (final ClassNotFoundException ignored) {
-                adapterClassName = API_LOGGER_ADAPTER_CLASS_NAME;
-            }
-            LOGGER.debug("Attempting to use {}", adapterClassName);
-            try {
-                adapter = LoaderUtil.newCheckedInstanceOf(adapterClassName, AbstractLoggerAdapter.class);
-            } catch (final Exception e) {
-                throw LOGGER.throwing(new LoggingException(e));
-            }
+            // Use API by default
+            // See https://github.com/apache/logging-log4j2/issues/2353
+            adapter = new ApiLoggerAdapter();
         }
         loggerAdapter = adapter;
         LOGGER.info("Registered Log4j as the java.util.logging.LogManager.");
