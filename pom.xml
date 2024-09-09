@@ -265,6 +265,7 @@
     <module>log4j-spring-cloud-config-client</module>
     <module>log4j-to-jul</module>
     <module>log4j-to-slf4j</module>
+    <module>log4j-jul-propagator</module>
 
   </modules>
 

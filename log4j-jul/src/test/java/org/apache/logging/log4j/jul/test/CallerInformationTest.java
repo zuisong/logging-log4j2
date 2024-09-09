@@ -18,17 +18,26 @@ package org.apache.logging.log4j.jul.test;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Filter;
 import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import org.apache.logging.log4j.core.test.appender.ListAppender;
 import org.apache.logging.log4j.core.test.junit.LoggerContextRule;
 import org.apache.logging.log4j.jul.LogManager;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+@RunWith(Parameterized.class)
 public class CallerInformationTest {
 
     private static final String PARAM_1 = "PARAM_1";
@@ -49,17 +58,58 @@ public class CallerInformationTest {
         System.clearProperty("java.util.logging.manager");
     }
 
+    @Parameterized.Parameters
+    public static Collection<Object[]> data() {
+        return Arrays.asList(new Object[][] {{false}, {true}});
+    }
+
+    private final boolean withFilter;
+    private CountingFilter filter;
+
+    public CallerInformationTest(final boolean withFilter) {
+        this.withFilter = withFilter;
+    }
+
+    @Before
+    public void setup() {
+        filter = withFilter ? new CountingFilter() : null;
+        Logger.getLogger("ClassLogger").setFilter(filter);
+        Logger.getLogger("MethodLogger").setFilter(filter);
+    }
+
     @Test
     public void testClassLogger() throws Exception {
         final ListAppender app = ctx.getListAppender("Class").clear();
         final Logger logger = Logger.getLogger("ClassLogger");
-        logger.info("Ignored message contents.");
-        logger.warning("Verifying the caller class is still correct.");
-        logger.severe("Hopefully nobody breaks me!");
+        // Eager methods
+        logger.severe("CATASTROPHE INCOMING!");
+        logger.warning("ZOMBIES!!!");
+        logger.info("brains~~~");
+        logger.config("Config!");
+        logger.fine("Itchy. Tasty.");
+        logger.finer("Finer message.");
+        logger.finest("Finest message.");
+        logger.log(Level.FINEST, "Finest message.");
+        logger.log(Level.FINEST, "Message of level {1}.", Level.FINEST);
+        logger.log(Level.FINEST, "Hello {1} and {2}!.", new Object[] {"foo", "bar"});
+        // Lazy methods
+        logger.severe(() -> "CATASTROPHE INCOMING!");
+        logger.warning(() -> "ZOMBIES!!!");
+        logger.info(() -> "brains~~~");
+        logger.config(() -> "Config!");
+        logger.fine(() -> "Itchy. Tasty.");
+        logger.finer(() -> "Finer message.");
+        logger.finest(() -> "Finest message.");
+        logger.log(Level.FINEST, () -> "Finest message.");
+        logger.log(Level.FINEST, new RuntimeException(), () -> "Message with exception.");
         List<String> messages = app.getMessages();
-        assertEquals("Incorrect number of messages.", 3, messages.size());
-        for (final String message : messages) {
-            assertEquals("Incorrect caller class name.", this.getClass().getName(), message);
+        assertMessageCount(19, messages);
+        for (int i = 0; i < messages.size(); i++) {
+            String message = messages.get(i);
+            assertEquals(
+                    "Incorrect caller class name for message " + i,
+                    this.getClass().getName(),
+                    message);
         }
 
         // Test passing the location information directly
@@ -70,10 +120,17 @@ public class CallerInformationTest {
         logger.logp(Level.INFO, SOURCE_CLASS, SOURCE_METHOD, "Hello!", new RuntimeException());
         logger.logp(Level.INFO, SOURCE_CLASS, SOURCE_METHOD, () -> "Hello" + PARAM_1 + "!");
         logger.logp(Level.INFO, SOURCE_CLASS, SOURCE_METHOD, new RuntimeException(), () -> "Hello " + PARAM_1 + "!");
+        logger.entering(SOURCE_CLASS, SOURCE_METHOD);
+        logger.entering(SOURCE_CLASS, SOURCE_METHOD, PARAM_1);
+        logger.entering(SOURCE_CLASS, SOURCE_METHOD, PARAMS);
+        logger.exiting(SOURCE_CLASS, SOURCE_METHOD);
+        logger.exiting(SOURCE_CLASS, SOURCE_METHOD, PARAM_1);
+        logger.throwing(SOURCE_CLASS, SOURCE_METHOD, new RuntimeException());
         messages = app.getMessages();
-        assertEquals("Incorrect number of messages.", 6, messages.size());
-        for (final String message : messages) {
-            assertEquals("Incorrect caller class name.", SOURCE_CLASS, message);
+        assertMessageCount(12, messages);
+        for (int i = 0; i < messages.size(); i++) {
+            String message = messages.get(i);
+            assertEquals("Incorrect caller class name for message " + i, SOURCE_CLASS, message);
         }
     }
 
@@ -81,15 +138,32 @@ public class CallerInformationTest {
     public void testMethodLogger() throws Exception {
         final ListAppender app = ctx.getListAppender("Method").clear();
         final Logger logger = Logger.getLogger("MethodLogger");
-        logger.info("More messages.");
-        logger.warning("CATASTROPHE INCOMING!");
-        logger.severe("ZOMBIES!!!");
-        logger.warning("brains~~~");
-        logger.info("Itchy. Tasty.");
+        // Eager methods
+        logger.severe("CATASTROPHE INCOMING!");
+        logger.warning("ZOMBIES!!!");
+        logger.info("brains~~~");
+        logger.config("Config!");
+        logger.fine("Itchy. Tasty.");
+        logger.finer("Finer message.");
+        logger.finest("Finest message.");
+        logger.log(Level.FINEST, "Finest message.");
+        logger.log(Level.FINEST, "Message of level {1}.", Level.FINEST);
+        logger.log(Level.FINEST, "Hello {1} and {2}!.", new Object[] {"foo", "bar"});
+        // Lazy methods
+        logger.severe(() -> "CATASTROPHE INCOMING!");
+        logger.warning(() -> "ZOMBIES!!!");
+        logger.info(() -> "brains~~~");
+        logger.config(() -> "Config!");
+        logger.fine(() -> "Itchy. Tasty.");
+        logger.finer(() -> "Finer message.");
+        logger.finest(() -> "Finest message.");
+        logger.log(Level.FINEST, () -> "Finest message.");
+        logger.log(Level.FINEST, new RuntimeException(), () -> "Message with exception.");
         List<String> messages = app.getMessages();
-        assertEquals("Incorrect number of messages.", 5, messages.size());
-        for (final String message : messages) {
-            assertEquals("Incorrect caller method name.", "testMethodLogger", message);
+        assertMessageCount(19, messages);
+        for (int i = 0; i < messages.size(); i++) {
+            String message = messages.get(i);
+            assertEquals("Incorrect caller class name for message " + i, "testMethodLogger", message);
         }
 
         // Test passing the location information directly
@@ -100,10 +174,35 @@ public class CallerInformationTest {
         logger.logp(Level.INFO, SOURCE_CLASS, SOURCE_METHOD, "Hello!", new RuntimeException());
         logger.logp(Level.INFO, SOURCE_CLASS, SOURCE_METHOD, () -> "Hello " + PARAM_1 + "!");
         logger.logp(Level.INFO, SOURCE_CLASS, SOURCE_METHOD, new RuntimeException(), () -> "Hello " + PARAM_1 + "!");
+        logger.entering(SOURCE_CLASS, SOURCE_METHOD);
+        logger.entering(SOURCE_CLASS, SOURCE_METHOD, PARAM_1);
+        logger.entering(SOURCE_CLASS, SOURCE_METHOD, PARAMS);
+        logger.exiting(SOURCE_CLASS, SOURCE_METHOD);
+        logger.exiting(SOURCE_CLASS, SOURCE_METHOD, PARAM_1);
+        logger.throwing(SOURCE_CLASS, SOURCE_METHOD, new RuntimeException());
         messages = app.getMessages();
-        assertEquals("Incorrect number of messages.", 6, messages.size());
-        for (final String message : messages) {
-            assertEquals("Incorrect caller method name.", SOURCE_METHOD, message);
+        assertMessageCount(12, messages);
+        for (int i = 0; i < messages.size(); i++) {
+            String message = messages.get(i);
+            assertEquals("Incorrect caller class name for message " + i, SOURCE_METHOD, message);
+        }
+    }
+
+    private void assertMessageCount(int expectedCount, List<String> messages) {
+        assertEquals("Incorrect number of messages.", expectedCount, messages.size());
+        if (filter != null) {
+            assertEquals("Incorrect number of filtered messages.", expectedCount, filter.count.getAndSet(0));
+        }
+    }
+
+    private static final class CountingFilter implements Filter {
+
+        AtomicInteger count = new AtomicInteger();
+
+        @Override
+        public boolean isLoggable(LogRecord record) {
+            count.incrementAndGet();
+            return true;
         }
     }
 }

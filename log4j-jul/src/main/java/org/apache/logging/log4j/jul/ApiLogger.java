@@ -18,15 +18,20 @@ package org.apache.logging.log4j.jul;
 
 import static org.apache.logging.log4j.jul.LevelTranslator.toLevel;
 
+import java.text.MessageFormat;
 import java.util.ResourceBundle;
 import java.util.function.Supplier;
 import java.util.logging.Filter;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+import org.apache.logging.log4j.BridgeAware;
+import org.apache.logging.log4j.LogBuilder;
+import org.apache.logging.log4j.message.DefaultFlowMessageFactory;
 import org.apache.logging.log4j.message.LocalizedMessage;
 import org.apache.logging.log4j.message.Message;
 import org.apache.logging.log4j.message.MessageFactory;
+import org.apache.logging.log4j.spi.AbstractLogger;
 import org.apache.logging.log4j.spi.ExtendedLogger;
 import org.apache.logging.log4j.status.StatusLogger;
 
@@ -46,14 +51,16 @@ import org.apache.logging.log4j.status.StatusLogger;
  */
 public class ApiLogger extends Logger {
 
-    private final WrappedLogger logger;
+    private static final org.apache.logging.log4j.Logger LOGGER = StatusLogger.getLogger();
+
+    private final ExtendedLogger logger;
     private static final String FQCN = ApiLogger.class.getName();
 
-    ApiLogger(final ExtendedLogger logger) {
+    protected ApiLogger(final ExtendedLogger logger) {
         super(logger.getName(), null);
         final Level javaLevel = LevelTranslator.toJavaLevel(logger.getLevel());
         super.setLevel(javaLevel);
-        this.logger = new WrappedLogger(logger);
+        this.logger = logger;
     }
 
     @Override
@@ -72,9 +79,30 @@ public class ApiLogger extends Logger {
     }
 
     // support for Logger.getFilter()/Logger.setFilter()
-    boolean isFiltered(final LogRecord logRecord) {
+    private boolean isFiltered(final LogRecord logRecord) {
         final Filter filter = getFilter();
         return filter != null && !filter.isLoggable(logRecord);
+    }
+
+    private boolean isFiltered(Level level, Throwable thrown, String msg, Object... params) {
+        final Filter filter = getFilter();
+        if (filter == null) {
+            return false;
+        }
+        LogRecord lr =
+                new LogRecord(level, params != null && params.length > 0 ? MessageFormat.format(msg, params) : msg);
+        lr.setThrown(thrown);
+        return !filter.isLoggable(lr);
+    }
+
+    private boolean isFiltered(Level level, Throwable thrown, Supplier<String> msgSupplier) {
+        final Filter filter = getFilter();
+        if (filter == null) {
+            return false;
+        }
+        LogRecord lr = new LogRecord(level, msgSupplier.get());
+        lr.setThrown(thrown);
+        return !filter.isLoggable(lr);
     }
 
     @Override
@@ -89,20 +117,7 @@ public class ApiLogger extends Logger {
 
     @Override
     public void setLevel(final Level newLevel) throws SecurityException {
-        StatusLogger.getLogger()
-                .error(
-                        "Cannot set JUL log level through log4j-api: " + "ignoring call to Logger.setLevel({})",
-                        newLevel);
-    }
-
-    /**
-     * Provides access to {@link Logger#setLevel(java.util.logging.Level)}. This method should only be used by child
-     * classes.
-     *
-     * @see Logger#setLevel(java.util.logging.Level)
-     */
-    protected void doSetLevel(final Level newLevel) throws SecurityException {
-        super.setLevel(newLevel);
+        LOGGER.error("Cannot set JUL log level through Log4j API: ignoring call to Logger.setLevel({})", newLevel);
     }
 
     /**
@@ -123,12 +138,11 @@ public class ApiLogger extends Logger {
         return () -> logger.getMessageFactory().newMessage(msgSupplier.get());
     }
 
-    private org.apache.logging.log4j.util.Supplier<LocalizedMessage> toLocalizedMessageSupplier(
-            ResourceBundle bundle, String msg) {
+    private org.apache.logging.log4j.util.Supplier<Message> toMessageSupplier(ResourceBundle bundle, String msg) {
         return () -> new LocalizedMessage(bundle, msg);
     }
 
-    private org.apache.logging.log4j.util.Supplier<LocalizedMessage> toLocalizedMessageSupplier(
+    private org.apache.logging.log4j.util.Supplier<Message> toMessageSupplier(
             ResourceBundle bundle, String msg, Object[] params) {
         return () -> new LocalizedMessage(bundle, msg, params);
     }
@@ -139,11 +153,10 @@ public class ApiLogger extends Logger {
 
     @Override
     public void log(final Level level, final String msg) {
-        if (hasFilter()) {
-            super.log(level, msg);
-        } else {
-            logger.log(toLevel(level), msg);
+        if (isFiltered(level, null, msg)) {
+            return;
         }
+        logger.logIfEnabled(FQCN, toLevel(level), null, msg);
     }
 
     /**
@@ -151,38 +164,34 @@ public class ApiLogger extends Logger {
      */
     @Override
     public void log(Level level, Supplier<String> msgSupplier) {
-        if (hasFilter()) {
-            super.log(level, msgSupplier);
-        } else {
-            logger.log(toLevel(level), toLog4jSupplier(msgSupplier));
+        if (isFiltered(level, null, msgSupplier)) {
+            return;
         }
+        logger.logIfEnabled(FQCN, toLevel(level), null, toLog4jSupplier(msgSupplier), null);
     }
 
     @Override
     public void log(final Level level, final String msg, final Object param1) {
-        if (hasFilter()) {
-            super.log(level, msg, param1);
-        } else {
-            logger.log(toLevel(level), msg, param1);
+        if (isFiltered(level, null, msg, param1)) {
+            return;
         }
+        logger.logIfEnabled(FQCN, toLevel(level), null, msg, param1);
     }
 
     @Override
     public void log(final Level level, final String msg, final Object[] params) {
-        if (hasFilter()) {
-            super.log(level, msg, params);
-        } else {
-            logger.log(toLevel(level), msg, params);
+        if (isFiltered(level, null, msg, params)) {
+            return;
         }
+        logger.logIfEnabled(FQCN, toLevel(level), null, msg, params);
     }
 
     @Override
     public void log(final Level level, final String msg, final Throwable thrown) {
-        if (hasFilter()) {
-            super.log(level, msg, thrown);
-        } else {
-            logger.log(toLevel(level), msg, thrown);
+        if (isFiltered(level, thrown, msg)) {
+            return;
         }
+        logger.logIfEnabled(FQCN, toLevel(level), null, msg, thrown);
     }
 
     /**
@@ -190,22 +199,20 @@ public class ApiLogger extends Logger {
      */
     @Override
     public void log(Level level, Throwable thrown, Supplier<String> msgSupplier) {
-        if (hasFilter()) {
-            super.log(level, thrown, msgSupplier);
-        } else {
-            logger.log(toLevel(level), toLog4jSupplier(msgSupplier), thrown);
+        if (isFiltered(level, thrown, msgSupplier)) {
+            return;
         }
+        logger.logIfEnabled(FQCN, toLevel(level), null, toLog4jSupplier(msgSupplier), thrown);
     }
 
     @Override
     public void logp(final Level level, final String sourceClass, final String sourceMethod, final String msg) {
-        if (hasFilter()) {
-            super.logp(level, sourceClass, sourceMethod, msg);
-        } else {
-            logger.atLevel(toLevel(level))
-                    .withLocation(toLocation(sourceClass, sourceMethod))
-                    .log(msg);
+        if (isFiltered(level, null, msg)) {
+            return;
         }
+        logger.atLevel(toLevel(level))
+                .withLocation(toLocation(sourceClass, sourceMethod))
+                .log(msg);
     }
 
     /**
@@ -213,13 +220,12 @@ public class ApiLogger extends Logger {
      */
     @Override
     public void logp(Level level, String sourceClass, String sourceMethod, Supplier<String> msgSupplier) {
-        if (hasFilter()) {
-            super.logp(level, sourceClass, sourceMethod, msgSupplier);
-        } else {
-            logger.atLevel(toLevel(level))
-                    .withLocation(toLocation(sourceClass, sourceMethod))
-                    .log(toMessageSupplier(msgSupplier));
+        if (isFiltered(level, null, msgSupplier)) {
+            return;
         }
+        logger.atLevel(toLevel(level))
+                .withLocation(toLocation(sourceClass, sourceMethod))
+                .log(toMessageSupplier(msgSupplier));
     }
 
     @Override
@@ -229,13 +235,12 @@ public class ApiLogger extends Logger {
             final String sourceMethod,
             final String msg,
             final Object param1) {
-        if (hasFilter()) {
-            super.logp(level, sourceClass, sourceMethod, msg, param1);
-        } else {
-            logger.atLevel(toLevel(level))
-                    .withLocation(toLocation(sourceClass, sourceMethod))
-                    .log(msg, param1);
+        if (isFiltered(level, null, msg, param1)) {
+            return;
         }
+        logger.atLevel(toLevel(level))
+                .withLocation(toLocation(sourceClass, sourceMethod))
+                .log(msg, param1);
     }
 
     @Override
@@ -245,13 +250,12 @@ public class ApiLogger extends Logger {
             final String sourceMethod,
             final String msg,
             final Object[] params) {
-        if (hasFilter()) {
-            super.logp(level, sourceClass, sourceMethod, msg, params);
-        } else {
-            logger.atLevel(toLevel(level))
-                    .withLocation(toLocation(sourceClass, sourceMethod))
-                    .log(msg, params);
+        if (isFiltered(level, null, msg, params)) {
+            return;
         }
+        logger.atLevel(toLevel(level))
+                .withLocation(toLocation(sourceClass, sourceMethod))
+                .log(msg, params);
     }
 
     @Override
@@ -261,14 +265,13 @@ public class ApiLogger extends Logger {
             final String sourceMethod,
             final String msg,
             final Throwable thrown) {
-        if (hasFilter()) {
-            super.logp(level, sourceClass, sourceMethod, msg, thrown);
-        } else {
-            logger.atLevel(toLevel(level))
-                    .withLocation(toLocation(sourceClass, sourceMethod))
-                    .withThrowable(thrown)
-                    .log(msg);
+        if (isFiltered(level, thrown, msg)) {
+            return;
         }
+        logger.atLevel(toLevel(level))
+                .withLocation(toLocation(sourceClass, sourceMethod))
+                .withThrowable(thrown)
+                .log(msg);
     }
 
     /**
@@ -277,14 +280,13 @@ public class ApiLogger extends Logger {
     @Override
     public void logp(
             Level level, String sourceClass, String sourceMethod, Throwable thrown, Supplier<String> msgSupplier) {
-        if (hasFilter()) {
-            super.logp(level, sourceClass, sourceMethod, thrown, msgSupplier);
-        } else {
-            logger.atLevel(toLevel(level))
-                    .withLocation(toLocation(sourceClass, sourceMethod))
-                    .withThrowable(thrown)
-                    .log(toMessageSupplier(msgSupplier));
+        if (isFiltered(level, thrown, msgSupplier)) {
+            return;
         }
+        logger.atLevel(toLevel(level))
+                .withLocation(toLocation(sourceClass, sourceMethod))
+                .withThrowable(thrown)
+                .log(toMessageSupplier(msgSupplier));
     }
 
     /**
@@ -293,26 +295,24 @@ public class ApiLogger extends Logger {
     @Override
     public void logrb(
             Level level, String sourceClass, String sourceMethod, ResourceBundle bundle, String msg, Object... params) {
-        if (hasFilter()) {
-            super.logrb(level, sourceClass, sourceMethod, bundle, msg, params);
-        } else {
-            logger.atLevel(toLevel(level))
-                    .withLocation(toLocation(sourceClass, sourceMethod))
-                    .log(toLocalizedMessageSupplier(bundle, msg, params));
+        if (isFiltered(level, null, msg, params)) {
+            return;
         }
+        logger.atLevel(toLevel(level))
+                .withLocation(toLocation(sourceClass, sourceMethod))
+                .log(toMessageSupplier(bundle, msg, params));
     }
 
     @Override
     public void logrb(
             Level level, String sourceClass, String sourceMethod, ResourceBundle bundle, String msg, Throwable thrown) {
-        if (hasFilter()) {
-            super.logrb(level, sourceClass, sourceMethod, bundle, msg, thrown);
-        } else {
-            logger.atLevel(toLevel(level))
-                    .withLocation(toLocation(sourceClass, sourceMethod))
-                    .withThrowable(thrown)
-                    .log(toLocalizedMessageSupplier(bundle, msg));
+        if (isFiltered(level, thrown, msg)) {
+            return;
         }
+        logger.atLevel(toLevel(level))
+                .withLocation(toLocation(sourceClass, sourceMethod))
+                .withThrowable(thrown)
+                .log(toMessageSupplier(bundle, msg));
     }
 
     /**
@@ -320,11 +320,10 @@ public class ApiLogger extends Logger {
      */
     @Override
     public void logrb(Level level, ResourceBundle bundle, String msg, Object... params) {
-        if (hasFilter()) {
-            super.logrb(level, bundle, msg, params);
-        } else {
-            logger.log(toLevel(level), toLocalizedMessageSupplier(bundle, msg, params));
+        if (isFiltered(level, null, msg, params)) {
+            return;
         }
+        logger.logIfEnabled(FQCN, toLevel(level), null, toMessageSupplier(bundle, msg, params), null);
     }
 
     /**
@@ -332,50 +331,101 @@ public class ApiLogger extends Logger {
      */
     @Override
     public void logrb(Level level, ResourceBundle bundle, String msg, Throwable thrown) {
-        if (hasFilter()) {
-            super.logrb(level, bundle, msg, thrown);
-        } else {
-            logger.atLevel(toLevel(level)).withThrowable(thrown).log(toLocalizedMessageSupplier(bundle, msg));
+        if (isFiltered(level, thrown, msg)) {
+            return;
         }
+        LogBuilder builder = logger.atLevel(toLevel(level)).withThrowable(thrown);
+        if (builder instanceof BridgeAware bridgeAware) {
+            bridgeAware.setEntryPoint(FQCN);
+        }
+        builder.log(toMessageSupplier(bundle, msg));
     }
 
     @Override
     public void entering(final String sourceClass, final String sourceMethod) {
-        logger.traceEntry();
+        if (isFiltered(Level.FINER, null, "ENTRY")) {
+            return;
+        }
+        logger.atTrace()
+                .withLocation(toLocation(sourceClass, sourceMethod))
+                .withMarker(AbstractLogger.ENTRY_MARKER)
+                .log(DefaultFlowMessageFactory.INSTANCE.newEntryMessage(null, (Object[]) null));
     }
 
     @Override
     public void entering(final String sourceClass, final String sourceMethod, final Object param1) {
-        logger.traceEntry(null, param1);
+        if (isFiltered(Level.FINER, null, "ENTRY {0}", param1)) {
+            return;
+        }
+        logger.atTrace()
+                .withLocation(toLocation(sourceClass, sourceMethod))
+                .withMarker(AbstractLogger.ENTRY_MARKER)
+                .log(DefaultFlowMessageFactory.INSTANCE.newEntryMessage(null, param1));
     }
 
     @Override
     public void entering(final String sourceClass, final String sourceMethod, final Object[] params) {
-        logger.traceEntry(null, params);
+        if (hasFilter()) {
+            // Emulate standard behavior
+            if (!isLoggable(Level.FINER)) {
+                return;
+            }
+            final StringBuilder b = new StringBuilder("ENTRY");
+            if (params != null) {
+                for (int i = 0; i < params.length; i++) {
+                    b.append(' ').append('{').append(i).append('}');
+                }
+            }
+            if (isFiltered(Level.FINER, null, b.toString(), params)) {
+                return;
+            }
+        }
+        logger.atTrace()
+                .withLocation(toLocation(sourceClass, sourceMethod))
+                .withMarker(AbstractLogger.ENTRY_MARKER)
+                .log(DefaultFlowMessageFactory.INSTANCE.newEntryMessage(null, params));
     }
 
     @Override
     public void exiting(final String sourceClass, final String sourceMethod) {
-        logger.traceExit();
+        if (isFiltered(Level.FINER, null, "RETURN")) {
+            return;
+        }
+        logger.atTrace()
+                .withLocation(toLocation(sourceClass, sourceMethod))
+                .withMarker(AbstractLogger.EXIT_MARKER)
+                .log(DefaultFlowMessageFactory.INSTANCE.newExitMessage(null, (Object) null));
     }
 
     @Override
     public void exiting(final String sourceClass, final String sourceMethod, final Object result) {
-        logger.traceExit(result);
+        if (isFiltered(Level.FINER, null, "RETURN {0}", result)) {
+            return;
+        }
+        logger.atTrace()
+                .withLocation(toLocation(sourceClass, sourceMethod))
+                .withMarker(AbstractLogger.EXIT_MARKER)
+                .log(DefaultFlowMessageFactory.INSTANCE.newExitMessage(null, result));
     }
 
     @Override
     public void throwing(final String sourceClass, final String sourceMethod, final Throwable thrown) {
-        logger.throwing(thrown);
+        if (isFiltered(Level.FINER, thrown, "THROW")) {
+            return;
+        }
+        logger.atTrace()
+                .withLocation(toLocation(sourceClass, sourceMethod))
+                .withMarker(AbstractLogger.THROWING_MARKER)
+                .withThrowable(thrown)
+                .log("Throwing");
     }
 
     @Override
     public void severe(final String msg) {
-        if (hasFilter()) {
-            super.severe(msg);
-        } else {
-            logger.logIfEnabled(FQCN, org.apache.logging.log4j.Level.ERROR, null, msg);
+        if (isFiltered(Level.SEVERE, null, msg)) {
+            return;
         }
+        logger.logIfEnabled(FQCN, org.apache.logging.log4j.Level.ERROR, null, msg);
     }
 
     /**
@@ -383,119 +433,106 @@ public class ApiLogger extends Logger {
      */
     @Override
     public void severe(Supplier<String> msgSupplier) {
-        if (hasFilter()) {
-            super.severe(msgSupplier);
-        } else {
-            logger.logIfEnabled(FQCN, org.apache.logging.log4j.Level.ERROR, null, toMessageSupplier(msgSupplier), null);
+        if (isFiltered(Level.SEVERE, null, msgSupplier)) {
+            return;
         }
+        logger.logIfEnabled(FQCN, org.apache.logging.log4j.Level.ERROR, null, toLog4jSupplier(msgSupplier), null);
     }
 
     @Override
     public void warning(final String msg) {
-        if (hasFilter()) {
-            super.warning(msg);
-        } else {
-            logger.logIfEnabled(FQCN, org.apache.logging.log4j.Level.WARN, null, msg);
+        if (isFiltered(Level.WARNING, null, msg)) {
+            return;
         }
+        logger.logIfEnabled(FQCN, org.apache.logging.log4j.Level.WARN, null, msg);
     }
 
     @Override
     public void warning(Supplier<String> msgSupplier) {
-        if (hasFilter()) {
-            super.warning(msgSupplier);
-        } else {
-            logger.logIfEnabled(FQCN, org.apache.logging.log4j.Level.WARN, null, toMessageSupplier(msgSupplier), null);
+        if (isFiltered(Level.WARNING, null, msgSupplier)) {
+            return;
         }
+        logger.logIfEnabled(FQCN, org.apache.logging.log4j.Level.WARN, null, toLog4jSupplier(msgSupplier), null);
     }
 
     @Override
     public void info(final String msg) {
-        if (hasFilter()) {
-            super.info(msg);
-        } else {
-            logger.logIfEnabled(FQCN, org.apache.logging.log4j.Level.INFO, null, msg);
+        if (isFiltered(Level.INFO, null, msg)) {
+            return;
         }
+        logger.logIfEnabled(FQCN, org.apache.logging.log4j.Level.INFO, null, msg);
     }
 
     @Override
     public void info(Supplier<String> msgSupplier) {
-        if (hasFilter()) {
-            super.info(msgSupplier);
-        } else {
-            logger.logIfEnabled(FQCN, org.apache.logging.log4j.Level.INFO, null, toMessageSupplier(msgSupplier), null);
+        if (isFiltered(Level.INFO, null, msgSupplier)) {
+            return;
         }
+        logger.logIfEnabled(FQCN, org.apache.logging.log4j.Level.INFO, null, toLog4jSupplier(msgSupplier), null);
     }
 
     @Override
     public void config(final String msg) {
-        if (hasFilter()) {
-            super.config(msg);
-        } else {
-            logger.logIfEnabled(FQCN, LevelTranslator.CONFIG, null, msg);
+        if (isFiltered(Level.CONFIG, null, msg)) {
+            return;
         }
+        logger.logIfEnabled(FQCN, LevelTranslator.CONFIG, null, msg);
     }
 
     @Override
     public void config(Supplier<String> msgSupplier) {
-        if (hasFilter()) {
-            super.config(msgSupplier);
-        } else {
-            logger.logIfEnabled(FQCN, LevelTranslator.CONFIG, null, toMessageSupplier(msgSupplier), null);
+        if (isFiltered(Level.CONFIG, null, msgSupplier)) {
+            return;
         }
+        logger.logIfEnabled(FQCN, LevelTranslator.CONFIG, null, toLog4jSupplier(msgSupplier), null);
     }
 
     @Override
     public void fine(final String msg) {
-        if (hasFilter()) {
-            super.fine(msg);
-        } else {
-            logger.logIfEnabled(FQCN, org.apache.logging.log4j.Level.DEBUG, null, msg);
+        if (isFiltered(Level.FINE, null, msg)) {
+            return;
         }
+        logger.logIfEnabled(FQCN, org.apache.logging.log4j.Level.DEBUG, null, msg);
     }
 
     @Override
     public void fine(Supplier<String> msgSupplier) {
-        if (hasFilter()) {
-            super.fine(msgSupplier);
-        } else {
-            logger.logIfEnabled(FQCN, org.apache.logging.log4j.Level.DEBUG, null, toMessageSupplier(msgSupplier), null);
+        if (isFiltered(Level.FINE, null, msgSupplier)) {
+            return;
         }
+        logger.logIfEnabled(FQCN, org.apache.logging.log4j.Level.DEBUG, null, toLog4jSupplier(msgSupplier), null);
     }
 
     @Override
     public void finer(final String msg) {
-        if (hasFilter()) {
-            super.finer(msg);
-        } else {
-            logger.logIfEnabled(FQCN, org.apache.logging.log4j.Level.TRACE, null, msg);
+        if (isFiltered(Level.FINER, null, msg)) {
+            return;
         }
+        logger.logIfEnabled(FQCN, org.apache.logging.log4j.Level.TRACE, null, msg);
     }
 
     @Override
     public void finer(Supplier<String> msgSupplier) {
-        if (hasFilter()) {
-            super.finer(msgSupplier);
-        } else {
-            logger.logIfEnabled(FQCN, org.apache.logging.log4j.Level.TRACE, null, toMessageSupplier(msgSupplier), null);
+        if (isFiltered(Level.FINER, null, msgSupplier)) {
+            return;
         }
+        logger.logIfEnabled(FQCN, org.apache.logging.log4j.Level.TRACE, null, toLog4jSupplier(msgSupplier), null);
     }
 
     @Override
     public void finest(final String msg) {
-        if (hasFilter()) {
-            super.finest(msg);
-        } else {
-            logger.logIfEnabled(FQCN, LevelTranslator.FINEST, null, msg);
+        if (isFiltered(Level.FINEST, null, msg)) {
+            return;
         }
+        logger.logIfEnabled(FQCN, LevelTranslator.FINEST, null, msg);
     }
 
     @Override
     public void finest(Supplier<String> msgSupplier) {
-        if (hasFilter()) {
-            super.finest(msgSupplier);
-        } else {
-            logger.logIfEnabled(FQCN, LevelTranslator.FINEST, null, toMessageSupplier(msgSupplier), null);
+        if (isFiltered(Level.FINEST, null, msgSupplier)) {
+            return;
         }
+        logger.logIfEnabled(FQCN, LevelTranslator.FINEST, null, toLog4jSupplier(msgSupplier), null);
     }
 
     private boolean hasFilter() {

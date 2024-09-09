@@ -19,6 +19,7 @@ package org.apache.logging.log4j.jul.test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.LogEvent;
@@ -96,19 +97,21 @@ public abstract class AbstractLoggerTest {
     }
 
     @Test
-    public void testAlteringLogFilter() throws Exception {
+    public void testCountingLogFilter() throws Exception {
+        AtomicInteger counter = new AtomicInteger();
         logger.setFilter(record -> {
-            record.setMessage("This is not the message you are looking for.");
+            counter.incrementAndGet();
             return true;
         });
         logger.info("Informative message here.");
+        assertThat(counter).hasValue(1);
         final List<LogEvent> events = eventAppender.getEvents();
         assertThat(events).hasSize(1);
         final LogEvent event = events.get(0);
         assertThat(event).isInstanceOf(MementoLogEvent.class);
         assertThat(event.getLevel()).isEqualTo(Level.INFO);
         assertThat(event.getLoggerName()).isEqualTo(LOGGER_NAME);
-        assertThat(event.getMessage().getFormattedMessage()).isEqualTo("This is not the message you are looking for.");
+        assertThat(event.getMessage().getFormattedMessage()).isEqualTo("Informative message here.");
         assertThat(event.getLoggerFqcn()).isEqualTo(ApiLogger.class.getName());
     }
 

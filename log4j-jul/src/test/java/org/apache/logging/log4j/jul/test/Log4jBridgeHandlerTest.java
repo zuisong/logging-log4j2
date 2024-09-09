@@ -18,7 +18,6 @@ package org.apache.logging.log4j.jul.test;
 
 // note: NO import of Logger, Level, LogManager to prevent conflicts JUL/log4j
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -29,6 +28,7 @@ import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.config.LoggerConfig;
+import org.assertj.core.api.Assertions;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -112,7 +112,7 @@ public class Log4jBridgeHandlerTest {
         if (OUTPUT_CAPTURED) prevSysErrStream.print(logOutput);
         logOutput = logOutput.replace("\r\n", "\n");
         regex = regex + "(.|\\n)*"; // allow any text with NL afterwards
-        assertTrue("Unmatching output:\n" + logOutput + "\n-- vs: --\n" + regex + "\n----", logOutput.matches(regex));
+        Assertions.assertThat(logOutput).matches(regex);
     }
 
     /** Get regex for a JUL console output. Must match JUL-Console-Formatter! */
@@ -305,62 +305,6 @@ public class Log4jBridgeHandlerTest {
         final java.util.logging.Logger lg =
                 java.util.logging.LogManager.getLogManager().getLogger(loggerName);
         assertEquals("Logger '" + loggerName + "'", julLevel, (lg == null ? null : lg.getLevel()));
-    }
-
-    @Test
-    public void test5LevelPropFromConfigFile() {
-        // JUL levels are set from config files and the initial propagation
-        assertLogLevel("", java.util.logging.Level.FINE);
-        assertLogLevel("log4j.Log4jBridgeHandlerTest.propagate1", java.util.logging.Level.FINE);
-        assertLogLevel("log4j.Log4jBridgeHandlerTest.propagate1.nested1", java.util.logging.Level.FINER);
-        assertLogLevel("log4j.Log4jBridgeHandlerTest.propagate1.nested2.deeplyNested", java.util.logging.Level.WARNING);
-        assertLogLevel("log4j.Log4jBridgeHandlerTest.propagate2", java.util.logging.Level.ALL);
-        assertLogLevel("log4j.Log4jBridgeHandlerTest.propagate2.nested.deeplyNested", java.util.logging.Level.INFO);
-        // these are set in logging.properties but not in log4j2.xml:
-        assertLogLevel("log4j.Log4jBridgeHandlerTest.propagate2.nested", null);
-        assertLogLevel("javax.mail", null);
-        // these should not exist:
-        assertLogLevel("log4j.Log4jBridgeHandlerTest", null);
-        assertLogLevel("log4j.Log4jBridgeHandlerTest.propagate1.nested", null);
-        assertLogLevel("log4j.Log4jBridgeHandlerTest.propagate1.nested1.deeplyNested", null);
-    }
-
-    @Test
-    public void test5LevelPropSetLevel() {
-        String name = "log4j.test.new_logger_level_set";
-        Configurator.setLevel(name, org.apache.logging.log4j.Level.DEBUG);
-        assertLogLevel(name, java.util.logging.Level.FINE);
-        test5LevelPropFromConfigFile(); // the rest should be untouched!
-
-        name = "log4j.Log4jBridgeHandlerTest.propagate1.nested1";
-        Configurator.setLevel(name, org.apache.logging.log4j.Level.WARN);
-        assertLogLevel(name, java.util.logging.Level.WARNING);
-        // the others around should be untouched
-        assertLogLevel("log4j.Log4jBridgeHandlerTest.propagate1", java.util.logging.Level.FINE);
-        assertLogLevel("log4j.Log4jBridgeHandlerTest.propagate1.nested2.deeplyNested", java.util.logging.Level.WARNING);
-
-        // note: no need to check for the other set[Root]Level() methods, because they all call
-        // loggerContext.updateLoggers() which calls firePropertyChangeEvent()
-    }
-
-    @Test
-    public void test5LevelPropGC() {
-        // this test will fail if you comment out "julLoggerRefs.add(julLog);" in propagateLogLevels()
-        test5LevelPropFromConfigFile(); // at start, all should be fine
-        final java.util.logging.Logger julLogRef =
-                java.util.logging.Logger.getLogger("log4j.Log4jBridgeHandlerTest.propagate1.nested1");
-        System.gc(); // a single call is sufficient
-        System.out.println("sysout:  test5LevelPropGC() still has reference to JUL-logger: " + julLogRef.getName()
-                + " / " + julLogRef);
-        try {
-            test5LevelPropFromConfigFile(); // even after GC the not referenced loggers should still be there
-        } catch (Throwable t) {
-            debugPrintJulLoggers("After GC");
-            // => JUL root logger, above explicitly referenced logger and its parent ("...propagate1")
-            //    and the global referenced julLog ("...jul.Log4jBridgeHandlerTest") are still there, the
-            //    others are null-references now
-            throw t;
-        }
     }
 
     /** Print all available JUL loggers to stdout. */

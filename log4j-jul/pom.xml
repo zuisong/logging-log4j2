@@ -28,6 +28,17 @@
   <name>Apache Log4j JUL Adapter</name>
   <description>The Apache Log4j implementation of java.util.logging</description>
 
+  <properties>
+    <bnd-extra-package-options>
+      <!-- Optional annotations -->
+      org.jspecify.*;resolution:=optional
+    </bnd-extra-package-options>
+    <bnd-extra-module-options>
+      <!-- Optional modules can not be `transitive` -->
+      org.jspecify;transitive=false
+    </bnd-extra-module-options>
+  </properties>
+
   <dependencies>
 
     <dependency>
@@ -110,6 +121,9 @@
               <excludes>
                 <exclude>Log4jBridgeHandlerTest.java</exclude>
               </excludes>
+              <systemPropertyVariables>
+                <java.util.logging.manager>org.apache.logging.log4j.jul.LogManager</java.util.logging.manager>
+              </systemPropertyVariables>
             </configuration>
           </execution>
           <execution>
