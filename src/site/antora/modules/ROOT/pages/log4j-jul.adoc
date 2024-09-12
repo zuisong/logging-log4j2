@@ -135,7 +135,7 @@ for details about the format and location of the `logging.properties` file.
 
 [IMPORTANT]
 ====
-Usage of `Log4jBridgeHandler` introduces a considerably higher overhead that the usage of `LogManager`, since logging events need to traverse the entire JUL logging pipeline followed by the logging pipeline of the Log4j API implementation.
+Usage of `Log4jBridgeHandler` introduces a considerably higher overhead, since logging events need to traverse the entire JUL logging pipeline followed by the logging pipeline of the Log4j API implementation.
 
 Consider setting <<#bridge-handler-propagateLevels>> to `true` to reduce the overhead.
 ====
