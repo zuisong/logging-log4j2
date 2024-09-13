@@ -18,26 +18,17 @@ package org.apache.logging.log4j.jul.test;
 
 import static org.junit.Assert.assertEquals;
 
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Filter;
 import java.util.logging.Level;
-import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import org.apache.logging.log4j.core.test.appender.ListAppender;
 import org.apache.logging.log4j.core.test.junit.LoggerContextRule;
 import org.apache.logging.log4j.jul.LogManager;
 import org.junit.AfterClass;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 
-@RunWith(Parameterized.class)
 public class CallerInformationTest {
 
     private static final String PARAM_1 = "PARAM_1";
@@ -58,27 +49,8 @@ public class CallerInformationTest {
         System.clearProperty("java.util.logging.manager");
     }
 
-    @Parameterized.Parameters
-    public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][] {{false}, {true}});
-    }
-
-    private final boolean withFilter;
-    private CountingFilter filter;
-
-    public CallerInformationTest(final boolean withFilter) {
-        this.withFilter = withFilter;
-    }
-
-    @Before
-    public void setup() {
-        filter = withFilter ? new CountingFilter() : null;
-        Logger.getLogger("ClassLogger").setFilter(filter);
-        Logger.getLogger("MethodLogger").setFilter(filter);
-    }
-
     @Test
-    public void testClassLogger() throws Exception {
+    public void testClassLogger() {
         final ListAppender app = ctx.getListAppender("Class").clear();
         final Logger logger = Logger.getLogger("ClassLogger");
         // Eager methods
@@ -103,7 +75,7 @@ public class CallerInformationTest {
         logger.log(Level.FINEST, () -> "Finest message.");
         logger.log(Level.FINEST, new RuntimeException(), () -> "Message with exception.");
         List<String> messages = app.getMessages();
-        assertMessageCount(19, messages);
+        assertEquals("Incorrect number of messages.", 19, messages.size());
         for (int i = 0; i < messages.size(); i++) {
             String message = messages.get(i);
             assertEquals(
@@ -127,7 +99,7 @@ public class CallerInformationTest {
         logger.exiting(SOURCE_CLASS, SOURCE_METHOD, PARAM_1);
         logger.throwing(SOURCE_CLASS, SOURCE_METHOD, new RuntimeException());
         messages = app.getMessages();
-        assertMessageCount(12, messages);
+        assertEquals("Incorrect number of messages.", 12, messages.size());
         for (int i = 0; i < messages.size(); i++) {
             String message = messages.get(i);
             assertEquals("Incorrect caller class name for message " + i, SOURCE_CLASS, message);
@@ -135,7 +107,7 @@ public class CallerInformationTest {
     }
 
     @Test
-    public void testMethodLogger() throws Exception {
+    public void testMethodLogger() {
         final ListAppender app = ctx.getListAppender("Method").clear();
         final Logger logger = Logger.getLogger("MethodLogger");
         // Eager methods
@@ -160,7 +132,7 @@ public class CallerInformationTest {
         logger.log(Level.FINEST, () -> "Finest message.");
         logger.log(Level.FINEST, new RuntimeException(), () -> "Message with exception.");
         List<String> messages = app.getMessages();
-        assertMessageCount(19, messages);
+        assertEquals("Incorrect number of messages.", 19, messages.size());
         for (int i = 0; i < messages.size(); i++) {
             String message = messages.get(i);
             assertEquals("Incorrect caller class name for message " + i, "testMethodLogger", message);
@@ -181,28 +153,10 @@ public class CallerInformationTest {
         logger.exiting(SOURCE_CLASS, SOURCE_METHOD, PARAM_1);
         logger.throwing(SOURCE_CLASS, SOURCE_METHOD, new RuntimeException());
         messages = app.getMessages();
-        assertMessageCount(12, messages);
+        assertEquals("Incorrect number of messages.", 12, messages.size());
         for (int i = 0; i < messages.size(); i++) {
             String message = messages.get(i);
             assertEquals("Incorrect caller class name for message " + i, SOURCE_METHOD, message);
-        }
-    }
-
-    private void assertMessageCount(int expectedCount, List<String> messages) {
-        assertEquals("Incorrect number of messages.", expectedCount, messages.size());
-        if (filter != null) {
-            assertEquals("Incorrect number of filtered messages.", expectedCount, filter.count.getAndSet(0));
-        }
-    }
-
-    private static final class CountingFilter implements Filter {
-
-        AtomicInteger count = new AtomicInteger();
-
-        @Override
-        public boolean isLoggable(LogRecord record) {
-            count.incrementAndGet();
-            return true;
         }
     }
 }

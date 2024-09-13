@@ -17,17 +17,10 @@
 package org.apache.logging.log4j.jul.test;
 
 // note: NO import of Logger, Level, LogManager to prevent conflicts JUL/log4j
-import static org.junit.Assert.assertEquals;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.Arrays;
-import java.util.Enumeration;
-import java.util.Map.Entry;
-import org.apache.logging.log4j.core.LoggerContext;
-import org.apache.logging.log4j.core.config.Configuration;
-import org.apache.logging.log4j.core.config.Configurator;
-import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.assertj.core.api.Assertions;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -36,34 +29,23 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 
 /**
- * Test the Log4jBridgeHandler.
- * Requires some configurations in the log-config-files, for format/layout
- * see also jul() and log4j():
- * - JUL-config ("logging-test.properties", must be set on JVM-start via "-D..."):
- *   + handlers = org.apache.logging.log4j.jul.Log4jBridgeHandler, java.util.logging.ConsoleHandler
- *   + org.apache.logging.log4j.jul.Log4jBridgeHandler.appendSuffix = _JUL
- *   + java.util.logging.ConsoleHandler.level = ALL
- *   + java.util.logging.SimpleFormatter.format = JUL:  %1$tT.%1$tL %4$s [%3$s: %2$s]  -  %5$s%6$s%n
- *   + .level = FINER
- * - log4j2-config ("log4j2-test.xml"):
- *   + <Root level="TRACE">
- *   + <Appenders> <Console> with target="SYSTEM_ERR", follow="true",
- *      <PatternLayout> "log4j2:  %d{HH:mm:ss.SSS} %5level - [%thread][%logger: %class/%method/%line]  -  %message%n"
- *
- * This test needs to capture syserr because it uses java.util.logging.ConsoleHandler.
- * Also, it performs some outputs to console (sysout and syserr); see also field OUTPUT_CAPTURED.
- *
- * The code also contains evaluation/test code for development time. It is not used for the unit tests
- * but kept here for reference and info. See field DEVTEST.
+ * Tests the Log4jBridgeHandler.
+ * <p>
+ *     Requires some configurations:
+ * </p>
+ * <ul>
+ *     <li>
+ *         The {@code java.util.logging.config.file} system property must be set to the location of the
+ *         {@code Log4jBridgeHandlerTest-jul.properties} resource.
+ *     </li>
+ *     <li>
+ *         The Log4j Core configuration file must be set to the location of the
+ *         {@code Log4jBridgeHandlerTest-log4j2.xml} resource.
+ *     </li>
+ * </ul>
  */
 @FixMethodOrder(org.junit.runners.MethodSorters.NAME_ASCENDING) // is nicer for manually checking console output
 public class Log4jBridgeHandlerTest {
-    /** Perform developer tests? */
-    private static final boolean DEVTEST = false;
-
-    /** Do output the captured logger-output to stdout? */
-    private static final boolean OUTPUT_CAPTURED =
-            !DEVTEST && Boolean.parseBoolean(System.getProperty("log4j.Log4jBridgeHandlerTest.outputCaptured"));
 
     /** This classes' simple name = relevant part of logger name. */
     private static final String CSNAME = Log4jBridgeHandlerTest.class.getSimpleName();
@@ -79,15 +61,6 @@ public class Log4jBridgeHandlerTest {
 
     @BeforeClass
     public static void beforeClass() {
-        // debug output to easily recognize misconfig.:
-        // System.out.println("sys-props:\n" + System.getProperties());
-        System.out.println("sysout:  logging-cfg-file:  " + System.getProperty("java.util.logging.config.file"));
-        if (DEVTEST) devTestBeforeClass(); // call before stderr capturing
-
-        // JUL does not like setting stderr inbetween, so set it once and reset collecting stream
-        // for each method; (thus com.github.stefanbirkner:system-rules:SystemErrRule cannot be used)
-        System.err.println("vvv--- BEGIN capturing output to stderr ---vvv"
-                + "   (do output of captured text to orig. stderr: " + OUTPUT_CAPTURED + ")");
         prevSysErrStream = System.err;
         System.setErr(new PrintStream(sysoutBytes, true));
     }
@@ -96,7 +69,6 @@ public class Log4jBridgeHandlerTest {
     public static void afterClass() {
         // reset sysout/err to original value
         System.setErr(prevSysErrStream);
-        System.err.println("^^^--- END capturing output of stderr ---^^^");
     }
 
     @Before
@@ -109,7 +81,6 @@ public class Log4jBridgeHandlerTest {
     private void assertSysoutMatches(String regex) {
         // String logOutput = systemOutRule.getLogWithNormalizedLineSeparator();
         String logOutput = sysoutBytes.toString();
-        if (OUTPUT_CAPTURED) prevSysErrStream.print(logOutput);
         logOutput = logOutput.replace("\r\n", "\n");
         regex = regex + "(.|\\n)*"; // allow any text with NL afterwards
         Assertions.assertThat(logOutput).matches(regex);
@@ -296,108 +267,5 @@ public class Log4jBridgeHandlerTest {
                         methodRE,
                         "JUL-Test via log\\(\\) with parameters \\(0=a, 1=b, 2=042.0\\)",
                         null));
-    }
-
-    // no test for logrb(ResourceBundle)-case as this is very specific and seldom used (in
-    // my opinion); and it does not add any real thing to test here
-
-    private void assertLogLevel(final String loggerName, final java.util.logging.Level julLevel) {
-        final java.util.logging.Logger lg =
-                java.util.logging.LogManager.getLogManager().getLogger(loggerName);
-        assertEquals("Logger '" + loggerName + "'", julLevel, (lg == null ? null : lg.getLevel()));
-    }
-
-    /** Print all available JUL loggers to stdout. */
-    private static void debugPrintJulLoggers(final String infoStr) {
-        final java.util.logging.LogManager julMgr = java.util.logging.LogManager.getLogManager();
-        System.out.println("sysout:  " + infoStr + " - for " + julMgr);
-        final java.util.List<String> txt = new java.util.ArrayList<>();
-        int n = 1;
-        for (Enumeration<String> en = julMgr.getLoggerNames(); en.hasMoreElements(); ) {
-            final String ln = en.nextElement();
-            final java.util.logging.Logger lg = julMgr.getLogger(ln);
-            if (lg == null) {
-                txt.add("(!null-Logger '" + ln + "')  #" + n);
-            } else if (lg.getLevel() == null) {
-                txt.add("(null-Level Logger '" + ln + "')  #" + n);
-            } else {
-                txt.add("Logger '" + ln + "',  lvl = " + lg.getLevel() + "  #" + n);
-            }
-            n++;
-        } // for
-        java.util.Collections.sort(txt, String.CASE_INSENSITIVE_ORDER);
-        for (String s : txt) {
-            System.out.println("  - " + s);
-        }
-    }
-
-    ////////////////
-    ////////////////   INTERNAL DEVELOPER TESTS follow
-    ////////////////   (these are NOT neccessary for unit test but source is kept here for reference and info)
-
-    static {
-        if (DEVTEST) {
-            System.out.println("sysout:  static init. BEGIN");
-
-            // get log4j context impl. (requires log4j-core!)
-            // note:  "LogManager.getContext();"  does not work, it returns another instance!?!
-            final LoggerContext context = LoggerContext.getContext(false); // this matches Configurator.setLevel() impl.
-            final Configuration cfg = context.getConfiguration();
-            // print real loggers (=> is empty when using LogManager.getContext()!?! only contains already instantiated
-            // loggers)
-            System.out.println("LogCtx " + context + " '" + context.getName() + "',  loc = "
-                    + context.getConfigLocation() + ",  cfg = " + cfg + " = " + System.identityHashCode(cfg));
-            for (org.apache.logging.log4j.Logger lg : context.getLoggers()) {
-                System.out.println("- Logger '" + lg.getName() + "',  lvl = " + lg.getLevel());
-            }
-            // print logger configurations (=> all loggers with level are present here)
-            System.out.println("Loggers in Cfg:");
-            for (Entry<String, LoggerConfig> entry : cfg.getLoggers().entrySet()) {
-                final LoggerConfig lcfg = entry.getValue();
-                System.out.println(
-                        "- '" + entry.getKey() + "' = '" + lcfg.getName() + "' / " + lcfg.getLevel() + "; " + lcfg);
-            }
-
-            // print JUL loggers (=> is completely init. here, even if first JUL log and BridgeHandler-creation happens
-            // later)
-            debugPrintJulLoggers("in static-class-init");
-            /* java.util.logging.LogManager julMgr = java.util.logging.LogManager.getLogManager();
-            System.out.println("\nJUL-Loggers for " + julMgr);
-            for (Enumeration<String> en = julMgr.getLoggerNames();  en.hasMoreElements(); ) {
-                String ln = en.nextElement();
-                java.util.logging.Logger lg = julMgr.getLogger(ln);
-                if (lg.getLevel() == null) {
-                    System.out.println("-    (null-Level Logger '" + ln + "')");
-                } else {
-                    System.out.println("- Logger '" + ln + "',  lvl = " + lg.getLevel());
-                }
-            } */
-
-            // changing of log4j config. is to be done via log4j.core.config.Configurator,
-            // e.g. setLevel(loggerName, newLevel)
-            // Note: the (internal) log4j.core.Logger has a setLevel() but this should not be used.
-            cfg.addListener(reconfigurable ->
-                    System.out.println("sysout:  CfgListener.PropChLi-reconfigure: " + reconfigurable));
-            context.addConfigurationStartedListener(configuration ->
-                    System.out.println("sysout:  CfgListener.PropChLi-configurationStarted: " + configuration));
-
-            System.out.println("sysout:  static init. END");
-        } // if
-    }
-
-    private static void devTestBeforeClass() {
-        log4jLog.info("Dummy-Start-Log in beforeClass()"); // force init. of log4j (needed?? does not harm)
-        @SuppressWarnings("resource")
-        final LoggerContext context = LoggerContext.getContext(
-                false); // this matches Configurator.setLevel() impl. (instead of "LogManager.getContext();")
-        System.out.println("beforeClass():  LogCtx " + context + " '" + context.getName() + "',  loc = "
-                + context.getConfigLocation() + ",  cfg = " + context.getConfiguration());
-        for (org.apache.logging.log4j.Logger lg : context.getLoggers()) {
-            System.out.println("- Logger '" + lg.getName() + "',  lvl = " + lg.getLevel());
-        }
-
-        // force level change
-        System.out.println("sysout:  now calling log4j-setLevel()");
-        Configurator.setLevel("log4jTest.Dummy_set_in_devTestBeforeClass", org.apache.logging.log4j.Level.DEBUG);
     }
 }

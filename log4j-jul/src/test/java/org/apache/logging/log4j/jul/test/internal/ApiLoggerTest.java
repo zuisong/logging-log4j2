@@ -16,10 +16,9 @@
  */
 package org.apache.logging.log4j.jul.test.internal;
 
-import static org.hamcrest.Matchers.equalTo;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 
 import java.util.logging.Logger;
 import org.apache.logging.log4j.core.test.appender.ListAppender;
@@ -33,8 +32,6 @@ import org.junit.Test;
 
 public class ApiLoggerTest extends AbstractLoggerTest {
 
-    private static String oldAdapter;
-
     @BeforeClass
     public static void setUpClass() {
         System.setProperty("java.util.logging.manager", LogManager.class.getName());
@@ -46,10 +43,15 @@ public class ApiLoggerTest extends AbstractLoggerTest {
     }
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         logger = Logger.getLogger(LOGGER_NAME);
         logger.setFilter(null);
-        assertThat(logger.getLevel(), equalTo(java.util.logging.Level.FINE));
+        assertThat(logger.isLoggable(java.util.logging.Level.FINE))
+                .as("Level %s is enabled", java.util.logging.Level.FINE)
+                .isTrue();
+        assertThat(logger.isLoggable(java.util.logging.Level.FINER))
+                .as("Level %s is enabled", java.util.logging.Level.FINER)
+                .isFalse();
         eventAppender = ListAppender.getListAppender("TestAppender");
         flowAppender = ListAppender.getListAppender("FlowAppender");
         stringAppender = ListAppender.getListAppender("StringAppender");
@@ -59,7 +61,7 @@ public class ApiLoggerTest extends AbstractLoggerTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         if (eventAppender != null) {
             eventAppender.clear();
         }
@@ -72,18 +74,18 @@ public class ApiLoggerTest extends AbstractLoggerTest {
     }
 
     @Test
-    public void testGetParent() throws Exception {
+    public void testGetParent() {
         final Logger parent = logger.getParent();
         assertNull("No parent logger should be automatically set up using log4j-api", parent);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testSetParentFails() throws Exception {
+    public void testSetParentFails() {
         logger.setParent(null);
     }
 
     @Test
-    public void testSetLevelFails() throws Exception {
+    public void testSetLevelFails() {
         logger.setLevel(null);
     }
 }

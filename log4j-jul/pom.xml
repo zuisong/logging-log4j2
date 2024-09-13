@@ -138,8 +138,8 @@
                 <include>Log4jBridgeHandlerTest.java</include>
               </includes>
               <systemPropertyVariables>
-                <java.util.logging.config.file>src/test/resources/logging-test.properties</java.util.logging.config.file>
-                <log4j.configuration.location>classpath:log4j2-julBridge-test.xml</log4j.configuration.location>
+                <java.util.logging.config.file>${basedir}/src/test/resources/Log4jBridgeHandlerTest-jul.properties</java.util.logging.config.file>
+                <log4j.configuration.location>classpath:Log4jBridgeHandlerTest-log4j2.xml</log4j.configuration.location>
               </systemPropertyVariables>
             </configuration>
           </execution>

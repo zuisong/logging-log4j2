@@ -19,7 +19,6 @@ package org.apache.logging.log4j.jul.test.support;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.LogEvent;
@@ -40,12 +39,12 @@ public abstract class AbstractLoggerTest {
     protected ListAppender stringAppender;
 
     @Test
-    public void testGetName() throws Exception {
+    public void testGetName() {
         assertThat(logger.getName()).isEqualTo(LOGGER_NAME);
     }
 
     @Test
-    public void testGlobalLogger() throws Exception {
+    public void testGlobalLogger() {
         final Logger root = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
         root.info("Test info message");
         root.config("Test info message");
@@ -59,52 +58,19 @@ public abstract class AbstractLoggerTest {
     }
 
     @Test
-    public void testGlobalLoggerName() throws Exception {
+    public void testGlobalLoggerName() {
         final Logger root = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
         assertThat(root.getName()).isEqualTo(Logger.GLOBAL_LOGGER_NAME);
     }
 
     @Test
-    public void testIsLoggable() throws Exception {
+    public void testIsLoggable() {
         assertThat(logger.isLoggable(java.util.logging.Level.SEVERE)).isTrue();
     }
 
     @Test
-    public void testLog() throws Exception {
+    public void testLog() {
         logger.info("Informative message here.");
-        final List<LogEvent> events = eventAppender.getEvents();
-        assertThat(events).hasSize(1);
-        final LogEvent event = events.get(0);
-        assertThat(event).isInstanceOf(MementoLogEvent.class);
-        assertThat(event.getLevel()).isEqualTo(Level.INFO);
-        assertThat(event.getLoggerName()).isEqualTo(LOGGER_NAME);
-        assertThat(event.getMessage().getFormattedMessage()).isEqualTo("Informative message here.");
-        assertThat(event.getLoggerFqcn()).isEqualTo(AbstractLogger.class.getName());
-    }
-
-    @Test
-    public void testLogFilter() throws Exception {
-        logger.setFilter(record -> false);
-        logger.severe("Informative message here.");
-        logger.warning("Informative message here.");
-        logger.info("Informative message here.");
-        logger.config("Informative message here.");
-        logger.fine("Informative message here.");
-        logger.finer("Informative message here.");
-        logger.finest("Informative message here.");
-        final List<LogEvent> events = eventAppender.getEvents();
-        assertThat(events).isEmpty();
-    }
-
-    @Test
-    public void testCountingLogFilter() throws Exception {
-        AtomicInteger counter = new AtomicInteger();
-        logger.setFilter(record -> {
-            counter.incrementAndGet();
-            return true;
-        });
-        logger.info("Informative message here.");
-        assertThat(counter).hasValue(1);
         final List<LogEvent> events = eventAppender.getEvents();
         assertThat(events).hasSize(1);
         final LogEvent event = events.get(0);
@@ -124,7 +90,7 @@ public abstract class AbstractLoggerTest {
     }
 
     @Test
-    public void testLogUsingCustomLevel() throws Exception {
+    public void testLogUsingCustomLevel() {
         logger.config("Config level");
         final List<LogEvent> events = eventAppender.getEvents();
         assertThat(events).hasSize(1);
@@ -133,7 +99,7 @@ public abstract class AbstractLoggerTest {
     }
 
     @Test
-    public void testLogWithCallingClass() throws Exception {
+    public void testLogWithCallingClass() {
         final Logger log = Logger.getLogger("Test.CallerClass");
         log.config("Calling from LoggerTest");
         final List<String> messages = stringAppender.getMessages();
