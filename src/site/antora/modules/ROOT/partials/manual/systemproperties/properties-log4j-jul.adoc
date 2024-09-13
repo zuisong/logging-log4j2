@@ -33,31 +33,31 @@ Fully qualified name of an alternative `org.apache.logging.log4j.jul.spi.LevelCo
 |===
 | Java Level | Log4j Level
 
-| https://docs.oracle.com/javase/{java-target-version}/docs/api/java/util/logging/Level.html#OFF[OFF]
+| https://docs.oracle.com/en/java/javase/{java-target-version}/docs/api/java.logging/java/util/logging/Level.html#OFF[OFF]
 | `OFF`
 
-| https://docs.oracle.com/javase/{java-target-version}/docs/api/java/util/logging/Level.html#SEVERE[SEVERE]
+| https://docs.oracle.com/en/java/javase/{java-target-version}/docs/api/java.logging/java/util/logging/Level.html#SEVERE[SEVERE]
 | `ERROR`
 
-| https://docs.oracle.com/javase/{java-target-version}/docs/api/java/util/logging/Level.html#WARNING[WARNING]
+| https://docs.oracle.com/en/java/javase/{java-target-version}/docs/api/java.logging/java/util/logging/Level.html#WARNING[WARNING]
 | `WARN`
 
-| https://docs.oracle.com/javase/{java-target-version}/docs/api/java/util/logging/Level.html#INFO[INFO]
+| https://docs.oracle.com/en/java/javase/{java-target-version}/docs/api/java.logging/java/util/logging/Level.html#INFO[INFO]
 | `INFO`
 
-| https://docs.oracle.com/javase/{java-target-version}/docs/api/java/util/logging/Level.html#CONFIG[CONFIG]
+| https://docs.oracle.com/en/java/javase/{java-target-version}/docs/api/java.logging/java/util/logging/Level.html#CONFIG[CONFIG]
 | custom `CONFIG` level with a numeric value of `450`
 
-| https://docs.oracle.com/javase/{java-target-version}/docs/api/java/util/logging/Level.html#FINE[FINE]
+| https://docs.oracle.com/en/java/javase/{java-target-version}/docs/api/java.logging/java/util/logging/Level.html#FINE[FINE]
 | `DEBUG`
 
-| https://docs.oracle.com/javase/{java-target-version}/docs/api/java/util/logging/Level.html#FINER[FINER]
+| https://docs.oracle.com/en/java/javase/{java-target-version}/docs/api/java.logging/java/util/logging/Level.html#FINER[FINER]
 | `TRACE`
 
-| https://docs.oracle.com/javase/{java-target-version}/docs/api/java/util/logging/Level.html#FINEST[FINEST]
+| https://docs.oracle.com/en/java/javase/{java-target-version}/docs/api/java.logging/java/util/logging/Level.html#FINEST[FINEST]
 | custom `FINEST` level with a numeric value of `700`
 
-| https://docs.oracle.com/javase/{java-target-version}/docs/api/java/util/logging/Level.html#ALL[ALL]
+| https://docs.oracle.com/en/java/javase/{java-target-version}/docs/api/java.logging/java/util/logging/Level.html#ALL[ALL]
 | `ALL`
 |===
 ====
@@ -72,6 +72,6 @@ Fully qualified name of an alternative `org.apache.logging.log4j.jul.spi.LevelCo
 | Default value | `org.apache.logging.log4j.jul.internal.ApiLoggerAdapter`
 |===
 
-Fully qualified class name of a custom `org.apache.logging.log4j.jul.spi.AbstractLoggerAdapter` implementation to use, which decide how to handle the level mutator methods in the JUL `Logger` interface.
+Fully qualified class name of a custom `org.apache.logging.log4j.jul.spi.AbstractLoggerAdapter` implementation to use, which provides an implementation of the `j.u.l.Logger` mutator methods (e.g., `Logger.setLevel()`).
 
 By default `org.apache.logging.log4j.jul.internal.ApiLoggerAdapter` is used and the mutator methods are disabled.

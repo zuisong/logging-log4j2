@@ -18,7 +18,7 @@ Licensed to the Apache Software Foundation (ASF) under one or more
 = JUL-to-Log4j bridge
 
 The JUL-to-Log4j bridge provides components that allow application and library that use
-https://docs.oracle.com/javase/8/docs/api/java/util/logging/Logger.html[`java.util.logging.Logger`]
+https://docs.oracle.com/en/java/javase/{java-target-version}/docs/api/java.logging/java/util/logging/Logger.html[`java.util.logging.Logger`]
 (JUL) to log to the Log4j API instead.
 
 [IMPORTANT]
@@ -41,7 +41,7 @@ include::partial$concepts.adoc[tag=!software-type]
 
 The `java.util.logging` logging API, available since JRE 1.4, shares many similarities with other logging API, such as SLF4J or Log4j API.
 Similarly to other APIs, it allows users to change the underlying
-https://docs.oracle.com/javase/8/docs/api/java/util/logging/LogManager.html[`LogManager`]
+https://docs.oracle.com/en/java/javase/{java-target-version}/docs/api/java.logging/java/util/logging/LogManager.html[`LogManager`]
 implementation, but unlike other APIs, it has two big limitations:
 
 * it is part of JRE, which means that each JVM can contain only one instance of the `LogManager` class and all the applications of an application server must use the same `LogManager` implementation,
@@ -85,18 +85,22 @@ Setting this property will replace the default JUL `LogManager` implementation w
 [#bridge-logmanager-features]
 === `LogManager`-specific features
 
-The use of a
-https://docs.oracle.com/javase/{java-target-version}/docs/api/java/util/logging/Filter.html[`java.util.logging.Filter`]
-is supported on a
-https://docs.oracle.com/javase/{java-target-version}/docs/api/java/util/logging/Logger.html[per-`Logger`]
-basis.
-However, it is recommended to use the standard xref:manual/filters.adoc[Filters] feature in Log4j instead.
+The use of the following `j.u.l.Logger` methods is **not** supported by the default `AbstractLoggerAdapter` implementation:
 
-The use of
-https://docs.oracle.com/javase/{java-target-version}/docs/api/java/util/logging/Handler.html[`java.util.logging.Handler`]
-classes is **not** supported.
-Custom handlers should be replaced with the appropriate
-xref:manual/appenders.adoc[Log4j Appender].
+* https://docs.oracle.com/en/java/javase/{java-target-version}/docs/api/java.logging/java/util/logging/Logger.html#setFilter(java.util.logging.Filter)[`Logger.setFilter(j.u.l.Filter)`],
+* https://docs.oracle.com/en/java/javase/{java-target-version}/docs/api/java.logging/java/util/logging/Logger.html#setLevel(java.util.logging.Level)[`Logger.setLevel(j.u.l.Level)`],
+* https://docs.oracle.com/en/java/javase/{java-target-version}/docs/api/java.logging/java/util/logging/Logger.html#setParent(java.util.logging.Logger)[`Logger.setParent(j.u.l.Logger)`],
+* https://docs.oracle.com/en/java/javase/{java-target-version}/docs/api/java.logging/java/util/logging/Logger.html#setUseParentHandlers(boolean)[`Logger.setUseParentHandlers(boolean)`],
+* https://docs.oracle.com/en/java/javase/{java-target-version}/docs/api/java.logging/java/util/logging/Logger.html#addHandler(java.util.logging.Handler)[`Logger.addHandler(j.u.l.Handler)`],
+* https://docs.oracle.com/en/java/javase/{java-target-version}/docs/api/java.logging/java/util/logging/Logger.html#removeHandler(java.util.logging.Handler)[`Logger.removeHandler(j.u.l.Handler)`].
+
+The implementation of these methods depends upon the specific Log4j API implementation used.
+If you need to modify the configuration of the logging backend programmatically:
+
+* either modify the logging backend configuration directly.
+See xref:manual/customconfig.adoc[] if you are using the xref:manual/implementation.adoc[Log4j Core implementation].
+* or provide a custom `AbstractLoggerAdapter` that provides an implementation for these methods.
+See <<log4j.jul.loggerAdapter>> for details about custom adapters.
 
 [#bridge-handler]
 == Using `Log4jBridgeHandler`
@@ -107,8 +111,8 @@ xref:manual/appenders.adoc[Log4j Appender].
 Spring Boot will automatically configure `Log4jBridgeHandler`.
 ====
 
-If setting the `java.util.logging.manager` system property is not possible, the JUL-to-Log4j bridge offers an implementation of JUL's
-https://docs.oracle.com/javase/{java-target-version}/docs/api/java/util/logging/Handler.html[`Handler`]
+If setting the `java.util.logging.manager` system property is not possible, the JUL-to-Log4j bridge offers an implementation of
+https://docs.oracle.com/en/java/javase/{java-target-version}/docs/api/java.logging/java/util/logging/Handler.html[`j.u.l.Handler`]
 abstract class, which redirects all log events to Log4j Core:
 `org.apache.logging.log4j.jul.Log4jBridgeHandler`.
 
@@ -128,7 +132,7 @@ handlers = org.apache.logging.log4j.jul.Log4jBridgeHandler
 ----
 +
 See the
-https://docs.oracle.com/javase/8/docs/api/java/util/logging/LogManager.html[JRE documentation]
+https://docs.oracle.com/en/java/javase/{java-target-version}/docs/api/java.logging/java/util/logging/LogManager.html[JRE documentation]
 for details about the format and location of the `logging.properties` file.
 
 * or call the `Log4jBridgeHandler.install()` method in your code.
