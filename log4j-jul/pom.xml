@@ -29,6 +29,9 @@
   <description>The Apache Log4j implementation of java.util.logging</description>
 
   <properties>
+    <!--
+      ~ OSGi and JPMS options
+      -->
     <bnd-extra-package-options>
       <!-- Optional annotations -->
       org.jspecify.*;resolution:=optional
