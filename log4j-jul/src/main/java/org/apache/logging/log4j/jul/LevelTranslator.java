@@ -18,6 +18,9 @@ package org.apache.logging.log4j.jul;
 
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.jul.internal.DefaultLevelConverter;
+import org.apache.logging.log4j.jul.internal.JulProperties;
+import org.apache.logging.log4j.jul.spi.LevelConverter;
 import org.apache.logging.log4j.kit.env.PropertyEnvironment;
 import org.apache.logging.log4j.status.StatusLogger;
 import org.apache.logging.log4j.util.LoaderUtil;

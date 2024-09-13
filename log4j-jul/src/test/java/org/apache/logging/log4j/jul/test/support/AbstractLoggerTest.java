@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.logging.log4j.jul.test;
+package org.apache.logging.log4j.jul.test.support;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -25,8 +25,8 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.impl.MementoLogEvent;
 import org.apache.logging.log4j.core.test.appender.ListAppender;
-import org.apache.logging.log4j.jul.ApiLogger;
 import org.apache.logging.log4j.jul.LevelTranslator;
+import org.apache.logging.log4j.jul.support.AbstractLogger;
 import org.junit.Test;
 
 /**
@@ -79,7 +79,7 @@ public abstract class AbstractLoggerTest {
         assertThat(event.getLevel()).isEqualTo(Level.INFO);
         assertThat(event.getLoggerName()).isEqualTo(LOGGER_NAME);
         assertThat(event.getMessage().getFormattedMessage()).isEqualTo("Informative message here.");
-        assertThat(event.getLoggerFqcn()).isEqualTo(ApiLogger.class.getName());
+        assertThat(event.getLoggerFqcn()).isEqualTo(AbstractLogger.class.getName());
     }
 
     @Test
@@ -112,7 +112,7 @@ public abstract class AbstractLoggerTest {
         assertThat(event.getLevel()).isEqualTo(Level.INFO);
         assertThat(event.getLoggerName()).isEqualTo(LOGGER_NAME);
         assertThat(event.getMessage().getFormattedMessage()).isEqualTo("Informative message here.");
-        assertThat(event.getLoggerFqcn()).isEqualTo(ApiLogger.class.getName());
+        assertThat(event.getLoggerFqcn()).isEqualTo(AbstractLogger.class.getName());
     }
 
     @Test

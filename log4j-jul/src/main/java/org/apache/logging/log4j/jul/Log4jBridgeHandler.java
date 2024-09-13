@@ -23,6 +23,7 @@ import aQute.bnd.annotation.spi.ServiceConsumer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.ServiceLoader;
 import java.util.logging.LogRecord;
+import org.apache.logging.log4j.jul.spi.LevelChangePropagator;
 import org.apache.logging.log4j.spi.ExtendedLogger;
 import org.apache.logging.log4j.status.StatusLogger;
 import org.apache.logging.log4j.util.ServiceLoaderUtil;
@@ -64,7 +65,7 @@ import org.apache.logging.log4j.util.ServiceLoaderUtil;
  * @see <a href="https://logging.apache.org/log4j/3.x/log4j-jul.html">Log4j documentation site</a>
  * @since 2.15.0
  */
-@ServiceConsumer(value = Log4jBridgeHandler.LevelPropagator.class, cardinality = Cardinality.SINGLE)
+@ServiceConsumer(value = LevelChangePropagator.class, cardinality = Cardinality.SINGLE)
 public class Log4jBridgeHandler extends java.util.logging.Handler {
     private static final org.apache.logging.log4j.Logger LOGGER = StatusLogger.getLogger();
 
@@ -77,7 +78,7 @@ public class Log4jBridgeHandler extends java.util.logging.Handler {
 
     private boolean doDebugOutput = false;
     private String julSuffixToAppend = null;
-    private LevelPropagator levelPropagator;
+    private LevelChangePropagator levelPropagator;
     private volatile boolean installAsLevelPropagator = false;
 
     /**
@@ -135,8 +136,9 @@ public class Log4jBridgeHandler extends java.util.logging.Handler {
         installAsLevelPropagator = propagateLevels;
         if (installAsLevelPropagator) {
             levelPropagator = ServiceLoaderUtil.safeStream(
-                            LevelPropagator.class,
-                            ServiceLoader.load(LevelPropagator.class, getClass().getClassLoader()),
+                            LevelChangePropagator.class,
+                            ServiceLoader.load(
+                                    LevelChangePropagator.class, getClass().getClassLoader()),
                             LOGGER)
                     .findAny()
                     .orElse(null);
@@ -215,31 +217,5 @@ public class Log4jBridgeHandler extends java.util.logging.Handler {
             name += julSuffixToAppend;
         }
         return org.apache.logging.log4j.LogManager.getLogger(name);
-    }
-
-    /**
-     * Propagates level configuration from the Log4j API implementation used
-     * <p>
-     *     Using the {@link Log4jBridgeHandler} is expensive, since disabled log events must be formatted by JUL,
-     *     before they can be dropped by the Log4j API implementation.
-     * </p>
-     * <p>
-     *     This class introduces a mechanism that can be implemented by each Log4j API implementation to be notified,
-     *     whenever a {@link Log4jBridgeHandler} is used. The logging implementation will be able to synchronize
-     *     its levels with the levels of JUL loggers each time it is reconfigured.
-     * </p>
-     * @since 3.0.0
-     */
-    public interface LevelPropagator {
-
-        /**
-         * Start propagating log levels.
-         */
-        void start();
-
-        /**
-         * Stop propagating log levels.
-         */
-        void stop();
     }
 }

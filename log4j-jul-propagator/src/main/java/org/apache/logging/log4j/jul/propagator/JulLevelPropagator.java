@@ -28,14 +28,14 @@ import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.apache.logging.log4j.jul.LevelTranslator;
-import org.apache.logging.log4j.jul.Log4jBridgeHandler;
+import org.apache.logging.log4j.jul.spi.LevelChangePropagator;
 import org.apache.logging.log4j.status.StatusLogger;
 
 /**
  * Propagates Log4j Core level to JUL.
  */
-@ServiceProvider(value = Log4jBridgeHandler.LevelPropagator.class)
-public class JulLevelPropagator implements Log4jBridgeHandler.LevelPropagator, Consumer<Configuration> {
+@ServiceProvider(value = LevelChangePropagator.class)
+public class JulLevelPropagator implements LevelChangePropagator, Consumer<Configuration> {
 
     private static final Logger LOGGER = StatusLogger.getLogger();
 

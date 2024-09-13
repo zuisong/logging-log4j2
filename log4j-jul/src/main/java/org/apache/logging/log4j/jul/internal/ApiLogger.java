@@ -14,12 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.logging.log4j.jul;
+package org.apache.logging.log4j.jul.internal;
 
-import org.apache.logging.log4j.kit.env.Log4jProperty;
-import org.jspecify.annotations.Nullable;
+import org.apache.logging.log4j.jul.support.AbstractLogger;
+import org.apache.logging.log4j.spi.ExtendedLogger;
 
-@Log4jProperty(name = "jul")
-public record JulProperties(
-        @Nullable Class<? extends LevelConverter> levelConverter,
-        @Nullable Class<? extends AbstractLoggerAdapter> loggerAdapter) {}
+/**
+ * Implementation of {@link java.util.logging.Logger} that ignores all method calls that do not have an equivalent in
+ * the Log4j API.
+ */
+public class ApiLogger extends AbstractLogger {
+
+    public ApiLogger(ExtendedLogger logger) {
+        super(logger);
+    }
+}

@@ -14,9 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.logging.log4j.jul;
+package org.apache.logging.log4j.jul.support;
 
 import static org.apache.logging.log4j.jul.LevelTranslator.toLevel;
+import static org.apache.logging.log4j.spi.AbstractLogger.ENTRY_MARKER;
+import static org.apache.logging.log4j.spi.AbstractLogger.EXIT_MARKER;
+import static org.apache.logging.log4j.spi.AbstractLogger.THROWING_MARKER;
 
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
@@ -27,11 +30,11 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import org.apache.logging.log4j.BridgeAware;
 import org.apache.logging.log4j.LogBuilder;
+import org.apache.logging.log4j.jul.LevelTranslator;
 import org.apache.logging.log4j.message.DefaultFlowMessageFactory;
 import org.apache.logging.log4j.message.LocalizedMessage;
 import org.apache.logging.log4j.message.Message;
 import org.apache.logging.log4j.message.MessageFactory;
-import org.apache.logging.log4j.spi.AbstractLogger;
 import org.apache.logging.log4j.spi.ExtendedLogger;
 import org.apache.logging.log4j.status.StatusLogger;
 
@@ -47,16 +50,16 @@ import org.apache.logging.log4j.status.StatusLogger;
  * <p>Also note that {@link #setParent(java.util.logging.Logger)} is explicitly unsupported. Parent loggers are
  * determined using the syntax of the logger name; not through an arbitrary graph of loggers.</p>
  *
- * @since 2.1
+ * @since 3.0.0
  */
-public class ApiLogger extends Logger {
+public class AbstractLogger extends Logger {
 
     private static final org.apache.logging.log4j.Logger LOGGER = StatusLogger.getLogger();
 
     private final ExtendedLogger logger;
-    private static final String FQCN = ApiLogger.class.getName();
+    private static final String FQCN = AbstractLogger.class.getName();
 
-    protected ApiLogger(final ExtendedLogger logger) {
+    protected AbstractLogger(final ExtendedLogger logger) {
         super(logger.getName(), null);
         final Level javaLevel = LevelTranslator.toJavaLevel(logger.getLevel());
         super.setLevel(javaLevel);
@@ -348,7 +351,7 @@ public class ApiLogger extends Logger {
         }
         logger.atTrace()
                 .withLocation(toLocation(sourceClass, sourceMethod))
-                .withMarker(AbstractLogger.ENTRY_MARKER)
+                .withMarker(ENTRY_MARKER)
                 .log(DefaultFlowMessageFactory.INSTANCE.newEntryMessage(null, (Object[]) null));
     }
 
@@ -359,7 +362,7 @@ public class ApiLogger extends Logger {
         }
         logger.atTrace()
                 .withLocation(toLocation(sourceClass, sourceMethod))
-                .withMarker(AbstractLogger.ENTRY_MARKER)
+                .withMarker(ENTRY_MARKER)
                 .log(DefaultFlowMessageFactory.INSTANCE.newEntryMessage(null, param1));
     }
 
@@ -382,7 +385,7 @@ public class ApiLogger extends Logger {
         }
         logger.atTrace()
                 .withLocation(toLocation(sourceClass, sourceMethod))
-                .withMarker(AbstractLogger.ENTRY_MARKER)
+                .withMarker(ENTRY_MARKER)
                 .log(DefaultFlowMessageFactory.INSTANCE.newEntryMessage(null, params));
     }
 
@@ -393,7 +396,7 @@ public class ApiLogger extends Logger {
         }
         logger.atTrace()
                 .withLocation(toLocation(sourceClass, sourceMethod))
-                .withMarker(AbstractLogger.EXIT_MARKER)
+                .withMarker(EXIT_MARKER)
                 .log(DefaultFlowMessageFactory.INSTANCE.newExitMessage(null, (Object) null));
     }
 
@@ -404,7 +407,7 @@ public class ApiLogger extends Logger {
         }
         logger.atTrace()
                 .withLocation(toLocation(sourceClass, sourceMethod))
-                .withMarker(AbstractLogger.EXIT_MARKER)
+                .withMarker(EXIT_MARKER)
                 .log(DefaultFlowMessageFactory.INSTANCE.newExitMessage(null, result));
     }
 
@@ -415,7 +418,7 @@ public class ApiLogger extends Logger {
         }
         logger.atTrace()
                 .withLocation(toLocation(sourceClass, sourceMethod))
-                .withMarker(AbstractLogger.THROWING_MARKER)
+                .withMarker(THROWING_MARKER)
                 .withThrowable(thrown)
                 .log("Throwing");
     }

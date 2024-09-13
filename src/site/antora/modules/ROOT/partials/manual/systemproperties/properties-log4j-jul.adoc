@@ -21,10 +21,10 @@
 |===
 | Env. variable | `LOG4J_JUL_LEVEL_CONVERTER`
 | Type          | `Class<? extends LevelConverter>`
-| Default value | `org.apache.logging.log4j.jul.DefaultLevelConverter`
+| Default value | `org.apache.logging.log4j.jul.internal.DefaultLevelConverter`
 |===
 
-Fully qualified name of an alternative `org.apache.logging.log4j.jul.LevelConverter` implementation.
+Fully qualified name of an alternative `org.apache.logging.log4j.jul.spi.LevelConverter` implementation.
 
 .Default level conversions
 [%collapsible]
@@ -69,9 +69,9 @@ Fully qualified name of an alternative `org.apache.logging.log4j.jul.LevelConver
 |===
 | Env. variable | `LOG4J_JUL_LOGGER_ADAPTER`
 | Type          | `Class<? extends AbstractLoggerAdapter>`
-| Default value | `org.apache.logging.log4j.jul.ApiLoggerAdapter`
+| Default value | `org.apache.logging.log4j.jul.internal.ApiLoggerAdapter`
 |===
 
-Fully qualified class name of a custom `org.apache.logging.log4j.jul.AbstractLoggerAdapter` implementation to use, which decide how to handle the level mutator methods in the JUL `Logger` interface.
+Fully qualified class name of a custom `org.apache.logging.log4j.jul.spi.AbstractLoggerAdapter` implementation to use, which decide how to handle the level mutator methods in the JUL `Logger` interface.
 
-By default `org.apache.logging.log4j.jul.ApiLoggerAdapter` is used and the mutator methods are disabled.
+By default `org.apache.logging.log4j.jul.internal.ApiLoggerAdapter` is used and the mutator methods are disabled.

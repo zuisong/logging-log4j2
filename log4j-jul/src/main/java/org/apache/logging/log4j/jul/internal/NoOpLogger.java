@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.logging.log4j.jul;
+package org.apache.logging.log4j.jul.internal;
 
 import java.util.ResourceBundle;
 import java.util.function.Supplier;
@@ -27,7 +27,7 @@ import java.util.logging.Logger;
  */
 public class NoOpLogger extends Logger {
 
-    protected NoOpLogger(final String name) {
+    public NoOpLogger(final String name) {
         super(name, null);
     }
 

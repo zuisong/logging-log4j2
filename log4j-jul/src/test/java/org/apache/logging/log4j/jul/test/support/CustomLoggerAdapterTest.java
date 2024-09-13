@@ -14,17 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.logging.log4j.jul.test;
+package org.apache.logging.log4j.jul.test.support;
 
 import static org.apache.logging.log4j.jul.test.JulTestProperties.JUL_LOGGER_ADAPTER;
 import static org.junit.Assert.assertTrue;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.logging.log4j.jul.AbstractLoggerAdapter;
-import org.apache.logging.log4j.jul.ApiLogger;
 import org.apache.logging.log4j.jul.LogManager;
+import org.apache.logging.log4j.jul.spi.AbstractLoggerAdapter;
+import org.apache.logging.log4j.jul.support.AbstractLogger;
 import org.apache.logging.log4j.spi.ExtendedLogger;
 import org.apache.logging.log4j.spi.LoggerContext;
+import org.apache.logging.log4j.status.StatusLogger;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -33,6 +35,8 @@ import org.junit.Test;
  * Tests if the logger adapter can be customized.
  */
 public class CustomLoggerAdapterTest {
+
+    private static final org.apache.logging.log4j.Logger LOGGER = StatusLogger.getLogger();
 
     @BeforeClass
     public static void setUpClass() {
@@ -55,15 +59,20 @@ public class CustomLoggerAdapterTest {
     public static class CustomLoggerAdapter extends AbstractLoggerAdapter {
 
         @Override
-        protected Logger newLogger(String name, LoggerContext context) {
+        public Logger newLogger(String name, LoggerContext context) {
             return new CustomLogger(context.getLogger(name));
         }
     }
 
-    private static class CustomLogger extends ApiLogger {
+    private static class CustomLogger extends AbstractLogger {
 
         CustomLogger(ExtendedLogger logger) {
             super(logger);
+        }
+
+        @Override
+        public void setLevel(final Level newLevel) throws SecurityException {
+            LOGGER.error("Cannot set JUL log level through Log4j API: ignoring call to Logger.setLevel({})", newLevel);
         }
     }
 }

@@ -14,25 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.logging.log4j.jul;
+package org.apache.logging.log4j.jul.internal;
 
-import java.util.logging.Logger;
-import org.apache.logging.log4j.message.MessageFactory;
-import org.apache.logging.log4j.message.MessageFormatMessageFactory;
-import org.apache.logging.log4j.spi.LoggerContext;
+import org.apache.logging.log4j.jul.spi.AbstractLoggerAdapter;
+import org.apache.logging.log4j.jul.spi.LevelConverter;
+import org.apache.logging.log4j.kit.env.Log4jProperty;
+import org.jspecify.annotations.Nullable;
 
-/**
- * {@link Logger} registry implementation using just log4j-api. This is the fallback registry used when log4j-core is
- * not available.
- *
- * @since 2.1
- */
-public class ApiLoggerAdapter extends AbstractLoggerAdapter {
-
-    private static final MessageFactory MESSAGE_FACTORY = new MessageFormatMessageFactory();
-
-    @Override
-    protected Logger newLogger(final String name, final LoggerContext context) {
-        return new ApiLogger(context.getLogger(name, MESSAGE_FACTORY));
-    }
-}
+@Log4jProperty(name = "jul")
+public record JulProperties(
+        @Nullable Class<? extends LevelConverter> levelConverter,
+        @Nullable Class<? extends AbstractLoggerAdapter> loggerAdapter) {}

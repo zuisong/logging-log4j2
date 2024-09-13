@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.logging.log4j.jul;
+package org.apache.logging.log4j.jul.spi;
 
 import java.util.logging.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -36,14 +36,29 @@ import org.apache.logging.log4j.util.StackLocatorUtil;
  *     If you wish to enable this feature again, you need to implement this class and provide its FQCN
  *     as {@code log4j.jul.loggerAdapter} configuration property.
  * </p>
+ * <p>
+ *     <strong>Implementation note:</strong> since version 3.0.0, this interface was moved to a new package.
+ * </p>
  *
  * @see <a href="https://github.com/apache/logging-log4j2/issues/2353">Issue #2353</a>
  * @since 2.1
  */
 public abstract class AbstractLoggerAdapter extends org.apache.logging.log4j.spi.AbstractLoggerAdapter<Logger> {
 
+    /**
+     * Creates a new {@link java.util.logging.Logger}
+     * <p>
+     *     Each implementation should provide this method.
+     * </p>
+     */
     @Override
-    protected LoggerContext getContext() {
+    public abstract Logger newLogger(String name, LoggerContext context);
+
+    /**
+     * Provides the most appropriate {@link LoggerContext} for the caller.
+     */
+    @Override
+    public LoggerContext getContext() {
         return getContext(
                 LogManager.getFactory().isClassLoaderDependent()
                         ? StackLocatorUtil.getCallerClass(java.util.logging.LogManager.class)

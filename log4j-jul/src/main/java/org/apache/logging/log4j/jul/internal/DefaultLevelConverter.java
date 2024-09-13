@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.logging.log4j.jul;
+package org.apache.logging.log4j.jul.internal;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,6 +25,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.jul.LevelTranslator;
+import org.apache.logging.log4j.jul.spi.LevelConverter;
 
 /**
  * Default implementation of LevelConverter strategy.

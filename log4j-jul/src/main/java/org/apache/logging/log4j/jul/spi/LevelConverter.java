@@ -14,15 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.logging.log4j.jul;
+package org.apache.logging.log4j.jul.spi;
 
 import org.apache.logging.log4j.Level;
 
 /**
  * Strategy interface to convert between custom Log4j {@link Level Levels} and JUL
  * {@link java.util.logging.Level Levels}.
+ * <p>
+ *     <strong>Implementation note:</strong> since version 3.0.0, this interface was moved to a new package.
+ * </p>
  *
- * @see JulProperties#levelConverter()
+ * @see org.apache.logging.log4j.jul.internal.JulProperties#levelConverter()
  * @since 2.1
  */
 public interface LevelConverter {

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.logging.log4j.jul.test;
+package org.apache.logging.log4j.jul.test.internal;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertNotNull;
@@ -24,6 +24,7 @@ import static org.junit.Assert.assertThat;
 import java.util.logging.Logger;
 import org.apache.logging.log4j.core.test.appender.ListAppender;
 import org.apache.logging.log4j.jul.LogManager;
+import org.apache.logging.log4j.jul.test.support.AbstractLoggerTest;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
